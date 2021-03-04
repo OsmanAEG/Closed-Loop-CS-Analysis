@@ -25,25 +25,55 @@ def extract_data(extension):
 
     raw_data = np.char.strip(raw_data, ';')
     raw_data = np.char.strip(raw_data, ']')
+    raw_data = raw_data.astype(np.float)
     return raw_data
 
-def plot_data(fig_number, set_name, x, y1, y2):
+def plot_freqData(fig_number, set_name, x, y):
+    fig = plt.figure(fig_number)
+    plt.semilogx(x, y)
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Position (dB)')
+    plt.savefig(set_name + '.png')
+    fig.show()
+
+def plot_regData(fig_number, set_name, x, y1, y2):
     fig = plt.figure(fig_number)
     plt.plot(x, y1)
     plt.plot(x, y2)
-    plt.legend(['Commanded Position', 'Encoded Position'])
-    plt.xlabel('Time')
-    plt.ylabel('Position')
+    plt.legend(['Command Position', 'Encoder Position'])
+    plt.xlabel('Time (s)')
+    plt.ylabel('Position (mm)')
     plt.savefig(set_name + '.png')
     fig.show()
                 
 #Processing the required datasets
-def processing_Datasets():
+def processing_freqDatasets():
     global figure_counter
-    set_names = np.array(['frequency response critically damped', 
+    freq_names = np.array(['frequency response critically damped', 
                           'frequency response over damped',
-                          'frequency response under damped',
-                          'P response Kp=2X',
+                          'frequency response under damped'])
+
+    for i in range(np.size(freq_names)):
+        data = extract_data(freq_names[i])
+
+        time, posCom, posEnc = data[:, 1], data[:, 2], data[:, 3]
+
+        freq = 10**((1.0 - time/60.0)*math.log10(0.1) + (time/60.0)*math.log10(20.0))
+
+        posDB = np.zeros(np.size(posEnc))
+        posEnc = np.abs(posEnc)
+        for j in range(np.size(posEnc)):
+            if posEnc[j] > 1.0:
+                posDB[j] = 20.0*math.log10(posEnc[j])
+            else:
+                posDB[j] = 20.0*math.log10(0.1)
+
+        figure_counter += 1
+        plot_freqData(figure_counter, freq_names[i], freq, posDB)
+    
+def processing_regDatasets():
+    global figure_counter
+    set_names = np.array(['P response Kp=2X',
                           'P response Kp=X',
                           'PD response critically damped',
                           'PD response over damped',
@@ -53,19 +83,13 @@ def processing_Datasets():
 
     for i in range(np.size(set_names)):
         data = extract_data(set_names[i])
-
-        time   = data[:, 1]
-        posCom = data[:, 2]
-        posEnc = data[:, 3]
+        time, posCom, posEnc = data[:, 1], data[:, 2], data[:, 3]
         figure_counter += 1
+        plot_regData(figure_counter, set_names[i], time, posCom, posEnc)
 
-        plot_data(figure_counter, set_names[i], time, posCom, posEnc)
-    
-    input()
-
-    return set_names, data
-
-set_names, data = processing_Datasets()
+processing_freqDatasets()
+processing_regDatasets()
+input()
 
 
 
