@@ -42,7 +42,7 @@ def plot_regData(fig_number, set_name, x, y1, y2):
     plt.plot(x, y2)
     plt.legend(['Command Position', 'Encoder Position'])
     plt.xlabel('Time (s)')
-    plt.ylabel('Position (mm)')
+    plt.ylabel('Position')
     plt.savefig(set_name + '.png')
     fig.show()
                 
